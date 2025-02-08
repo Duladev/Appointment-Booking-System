@@ -1,23 +1,19 @@
-// App.js
-
-import React from 'react';
-import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
-import AdminDashboard from './AdminDashboard';
-import SlotBooking from './SlotBooking';
+import React, { useState } from 'react';
+import UserDashboard from './components/UserDashboard';
+import AdminDashboard from './components/AdminDashboard';
 
 function App() {
+  const [isAdmin, setIsAdmin] = useState(false); // Switch between user and admin
+
   return (
-    <Router>
-      <div>
-        <div>
-          <h1>Appointment Booking System</h1>
-        </div>
-        <Routes>
-          <Route path="/" element={<AdminDashboard />} />
-          <Route path="/book-slot" element={<SlotBooking />} />
-        </Routes>
-      </div>
-    </Router>
+    <div className="App">
+      <h1>Appointment Booking System</h1>
+      <button onClick={() => setIsAdmin(!isAdmin)}>
+        {isAdmin ? "Switch to User" : "Switch to Admin"}
+      </button>
+
+      {isAdmin ? <AdminDashboard /> : <UserDashboard />}
+    </div>
   );
 }
 

@@ -5,7 +5,7 @@ const Slots = () => {
 
     // Fetch slots when the component loads
     useEffect(() => {
-        fetch("http://localhost:5002/slots")
+        fetch("http://localhost:5003/slots")
             .then((response) => response.json())
             .then((data) => setSlots(data))  // Store slots data
             .catch((error) => console.error("Error fetching slots:", error));
@@ -13,7 +13,7 @@ const Slots = () => {
 
     // Function to book a slot
     const bookSlot = (id) => {
-        fetch(`http://localhost:5002/book-slot/${id}`, { method: 'PUT' })
+        fetch(`http://localhost:5003/book-slot/${id}`, { method: 'PUT' })
             .then(response => response.json())
             .then(data => {
                 alert(data.message);  // Show success message
