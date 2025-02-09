@@ -1,20 +1,25 @@
-import React, { useState } from 'react';
-import UserDashboard from './components/UserDashboard';
-import AdminDashboard from './components/AdminDashboard';
+import React from "react";
+import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
+import Home from "./components/Home";
+import UserLogin from "./components/UserLogin";
+import AdminLogin from "./components/AdminLogin";
+import UserRegister from "./components/UserRegister";
+import UserDashboard from "./components/UserDashboard";
+import AdminDashboard from "./components/AdminDashboard";
 
-function App() {
-  const [isAdmin, setIsAdmin] = useState(false); // Switch between user and admin
-
+const App = () => {
   return (
-    <div className="App">
-      <h1>Appointment Booking System</h1>
-      <button onClick={() => setIsAdmin(!isAdmin)}>
-        {isAdmin ? "Switch to User" : "Switch to Admin"}
-      </button>
-
-      {isAdmin ? <AdminDashboard /> : <UserDashboard />}
-    </div>
+    <Router>
+      <Routes>
+        <Route path="/" element={<Home />} />
+        <Route path="/user/login" element={<UserLogin />} />
+        <Route path="/admin/login" element={<AdminLogin />} />
+        <Route path="/user/register" element={<UserRegister />} />  {/* New Registration Route */}
+        <Route path="/user/dashboard" element={<UserDashboard />} />
+        <Route path="/admin/dashboard" element={<AdminDashboard />} />
+      </Routes>
+    </Router>
   );
-}
+};
 
 export default App;

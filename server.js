@@ -17,118 +17,73 @@ const db = mysql.createConnection({
     database: 'appointment_booking'
 });
 
-// Test MySQL connection
 db.connect((err) => {
     if (err) {
-        console.error('Database connection failed: ' + err.stack);
-        return;
+        console.error("Database connection failed:", err);
+    } else {
+        console.log("Connected to MySQL");
     }
-    console.log('Connected to MySQL database.');
 });
 
-// Default route
-app.get("/", (req, res) => {
-    res.send("Appointment Booking System API is running...");
-});
+// **User Registration Route**
+app.post("/api/register", async (req, res) => {
+    const { name, email, password } = req.body;
 
-// Route to get available slots
-app.get("/slots", (req, res) => {
-    const query = "SELECT * FROM slots";  // Query to get slots from the database
-    db.query(query, (err, results) => {
+    const hashedPassword = await bcrypt.hash(password, 10);
+    const sql = "INSERT INTO users (name, email, password) VALUES (?, ?, ?)";
+
+    db.query(sql, [name, email, hashedPassword], (err, result) => {
         if (err) {
-            console.error("Error fetching slots:", err);
-            return res.status(500).json({ message: "Error fetching slots" });
+            return res.status(400).json({ message: "Email already exists" });
         }
-        res.json(results);  // Send the slots data as JSON response
+        res.json({ message: "User registered successfully" });
     });
 });
 
-// Route to book a slot (update the `is_booked` field)
-app.put("/book-slot/:id", (req, res) => {
-    const slotId = req.params.id;
-    const query = "UPDATE slots SET is_booked = 1 WHERE id = ?";
+// **User Login Route**
+app.post("/api/login", (req, res) => {
+    const { email, password } = req.body;
 
-    db.query(query, [slotId], (err, results) => {
-        if (err) {
-            console.error("Error booking slot:", err);
-            return res.status(500).json({ message: "Error booking slot" });
+    const sql = "SELECT * FROM users WHERE email = ?";
+    db.query(sql, [email], async (err, results) => {
+        if (err || results.length === 0) {
+            return res.status(400).json({ message: "User not found" });
         }
 
-        if (results.affectedRows === 0) {
-            return res.status(404).json({ message: "Slot not found" });
+        const user = results[0];
+        const isMatch = await bcrypt.compare(password, user.password);
+
+        if (!isMatch) {
+            return res.status(400).json({ message: "Invalid credentials" });
         }
 
-        res.json({ message: "Slot booked successfully" });
+        const token = jwt.sign({ userId: user.id }, SECRET_KEY, { expiresIn: "1h" });
+
+        res.json({ token, user: { id: user.id, name: user.name, email: user.email } });
     });
 });
 
-// Route to get all appointments (admin access)
-app.get("/appointments", (req, res) => {
-    const query = "SELECT * FROM appointments";  // Query to get appointments from the database
-    db.query(query, (err, results) => {
-        if (err) {
-            console.error("Error fetching appointments:", err);
-            return res.status(500).json({ message: "Error fetching appointments" });
+// **Admin Login Route**
+app.post("/api/admin-login", (req, res) => {
+    const { username, password } = req.body;
+
+    const sql = "SELECT * FROM admins WHERE username = ?";
+    db.query(sql, [username], async (err, results) => {
+        if (err || results.length === 0) {
+            return res.status(400).json({ message: "Admin not found" });
         }
-        res.json(results);  // Send the appointments data as JSON response
+
+        const admin = results[0];
+        const isMatch = await bcrypt.compare(password, admin.password);
+
+        if (!isMatch) {
+            return res.status(400).json({ message: "Invalid credentials" });
+        }
+
+        const token = jwt.sign({ adminId: admin.id }, SECRET_KEY, { expiresIn: "1h" });
+
+        res.json({ token, admin: { id: admin.id, username: admin.username } });
     });
 });
 
-// Route to add a new appointment (admin access)
-app.post("/appointments", (req, res) => {
-    const { name, date, time, description } = req.body; // Fields for the appointment
-    const query = "INSERT INTO appointments (name, date, time, description) VALUES (?, ?, ?, ?)";
-
-    db.query(query, [name, date, time, description], (err, results) => {
-        if (err) {
-            console.error("Error adding appointment:", err);
-            return res.status(500).json({ message: "Error adding appointment" });
-        }
-        res.status(201).json({ message: "Appointment added successfully" });
-    });
-});
-
-// Route to update an appointment (admin access)
-app.put("/appointments/:id", (req, res) => {
-    const appointmentId = req.params.id;
-    const { name, date, time, description } = req.body;  // Fields to update
-    const query = "UPDATE appointments SET name = ?, date = ?, time = ?, description = ? WHERE id = ?";
-
-    db.query(query, [name, date, time, description, appointmentId], (err, results) => {
-        if (err) {
-            console.error("Error updating appointment:", err);
-            return res.status(500).json({ message: "Error updating appointment" });
-        }
-
-        if (results.affectedRows === 0) {
-            return res.status(404).json({ message: "Appointment not found" });
-        }
-
-        res.json({ message: "Appointment updated successfully" });
-    });
-});
-
-// Route to delete an appointment (admin access)
-app.delete("/appointments/:id", (req, res) => {
-    const appointmentId = req.params.id;
-    const query = "DELETE FROM appointments WHERE id = ?";
-
-    db.query(query, [appointmentId], (err, results) => {
-        if (err) {
-            console.error("Error deleting appointment:", err);
-            return res.status(500).json({ message: "Error deleting appointment" });
-        }
-
-        if (results.affectedRows === 0) {
-            return res.status(404).json({ message: "Appointment not found" });
-        }
-
-        res.json({ message: "Appointment deleted successfully" });
-    });
-});
-
-// Set the port for the server to listen on
-const PORT = process.env.PORT || 5005;
-app.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
-});
+app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
