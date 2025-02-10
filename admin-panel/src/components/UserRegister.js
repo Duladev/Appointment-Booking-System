@@ -17,34 +17,39 @@ const UserRegister = () => {
     };
 
     return (
-        <div style={{ textAlign: "center", marginTop: "50px" }}>
-            <h2>User Registration</h2>
-            <form onSubmit={handleRegister}>
-                <input
-                    type="text"
-                    placeholder="Full Name"
-                    value={user.name}
-                    onChange={(e) => setUser({ ...user, name: e.target.value })}
-                />
-                <br />
-                <input
-                    type="email"
-                    placeholder="Email"
-                    value={user.email}
-                    onChange={(e) => setUser({ ...user, email: e.target.value })}
-                />
-                <br />
-                <input
-                    type="password"
-                    placeholder="Password"
-                    value={user.password}
-                    onChange={(e) => setUser({ ...user, password: e.target.value })}
-                />
-                <br />
-                <button type="submit" style={{ padding: "10px 20px", backgroundColor: "blue", color: "white" }}>
-                    Register
-                </button>
-            </form>
+        <div className="flex items-center justify-center min-h-screen bg-gradient-to-r from-blue-400 via-green-500 to-purple-600">
+            <div className="w-full max-w-md p-8 bg-white bg-opacity-80 rounded-xl shadow-xl">
+                <h2 className="text-3xl font-semibold text-center text-gray-800 mb-6">User Registration</h2>
+                <form onSubmit={handleRegister} className="space-y-6">
+                    <input
+                        type="text"
+                        placeholder="Full Name"
+                        value={user.name}
+                        onChange={(e) => setUser({ ...user, name: e.target.value })}
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+                    />
+                    <input
+                        type="email"
+                        placeholder="Email"
+                        value={user.email}
+                        onChange={(e) => setUser({ ...user, email: e.target.value })}
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+                    />
+                    <input
+                        type="password"
+                        placeholder="Password"
+                        value={user.password}
+                        onChange={(e) => setUser({ ...user, password: e.target.value })}
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+                    />
+                    <button
+                        type="submit"
+                        className="w-full py-3 bg-blue-600 text-white font-semibold rounded-lg shadow-md hover:bg-blue-700 transition duration-300"
+                    >
+                        Register
+                    </button>
+                </form>
+            </div>
         </div>
     );
 };
