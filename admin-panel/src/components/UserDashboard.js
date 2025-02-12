@@ -6,7 +6,7 @@ const UserDashboard = () => {
     const [appointments, setAppointments] = useState([]);  // List of appointments
 
     useEffect(() => {
-        axios.get('http://localhost:5004/appointments/user')
+        axios.get('http://localhost:5005/appointments/user')
             .then(response => {
                 console.log("Received time slots:", response.data); // ✅ Check what the API returns
                 setAppointments(response.data);
@@ -16,7 +16,7 @@ const UserDashboard = () => {
 
     useEffect(() => {
         // Fetch the user's appointments (pending and completed)
-        axios.get('http://localhost:5004/appointments/user')  // Update this API endpoint based on your backend
+        axios.get('http://localhost:5005/appointments/user')  // Update this API endpoint based on your backend
             .then(response => {
                 setAppointments(response.data);
             })
@@ -26,7 +26,7 @@ const UserDashboard = () => {
     }, []);
 
     const handleCancelAppointment = (appointmentId) => {
-        axios.post('http://localhost:5004/appointments/cancel', { appointmentId })
+        axios.post('http://localhost:5005/appointments/cancel', { appointmentId })
             .then(response => {
                 alert(response.data.message);
                 setAppointments(appointments.filter(appointment => appointment.id !== appointmentId)); // Remove from list

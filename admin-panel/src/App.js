@@ -9,6 +9,9 @@ import AdminDashboard from "./components/AdminDashboard";
 import UserAppointment from "./components/UserAppointment";
 import AdminAppointments from "./components/AdminAppointments";
 import BookAppointment from './components/BookAppointment';
+import AddTimeSlots from "./components/AddTimeSlots";
+import ManageAppointments from "./components/ManageAppointments";
+
 
 const App = () => {
   return (
@@ -23,6 +26,8 @@ const App = () => {
         <Route path="/user/appointment" element={<UserAppointment />} />
         <Route path="/admin/appointments" element={<AdminAppointments />} />
         <Route path="/book-appointment" element={<BookAppointment />} />
+        <Route path="/add-time-slots" element={<AddTimeSlots />} />
+        <Route path="/manage-appointments" element={<ManageAppointments />} />
       </Routes>
     </Router>
   );

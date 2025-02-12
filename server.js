@@ -8,9 +8,9 @@ const jwt = require("jsonwebtoken");
 
 const app = express();
 const PORT = process.env.PORT || 5005;
-const SECRET_KEY = process.env.SECRET_KEY || "92ea081ab0cbed55c7e441f82add8328d51a085fff1a5145c92d1891a7475a26"; // Replace in .env file
+const SECRET_KEY = process.env.SECRET_KEY || "92ea081ab0cbed55c7e441f82add8328d51a085fff1a5145c92d1891a7475a26"; // Move this to .env
 
-app.use(cors());
+app.use(cors({ origin: "http://localhost:5006" })); // Adjust based on frontend URL
 app.use(express.json());
 
 // Establish MySQL connection
@@ -41,12 +41,12 @@ app.post("/api/register", async (req, res) => {
                 if (err.code === "ER_DUP_ENTRY") {
                     return res.status(400).json({ message: "Email already exists" });
                 }
-                return res.status(500).json({ message: "Database error" });
+                return res.status(500).json({ message: "Database error", error: err });
             }
             res.json({ message: "User registered successfully" });
         });
     } catch (error) {
-        res.status(500).json({ message: "Internal server error" });
+        res.status(500).json({ message: "Internal server error", error });
     }
 });
 
@@ -99,7 +99,7 @@ app.post("/api/appointments", (req, res) => {
 
     db.query(sql, [userId, name, mobileNumber, description, timeSlot, date], (err, result) => {
         if (err) {
-            res.status(500).json({ message: "Error booking appointment" });
+            res.status(500).json({ message: "Error booking appointment", error: err });
         } else {
             res.status(201).json({ message: "Appointment booked successfully!" });
         }
@@ -113,7 +113,7 @@ app.get("/api/appointments/:userId", (req, res) => {
 
     db.query(sql, [userId], (err, results) => {
         if (err) {
-            return res.status(500).json({ message: "Error fetching appointments" });
+            return res.status(500).json({ message: "Error fetching appointments", error: err });
         }
         res.json(results);
     });
@@ -125,7 +125,7 @@ app.get("/api/admin/appointments", (req, res) => {
 
     db.query(sql, (err, results) => {
         if (err) {
-            return res.status(500).json({ message: "Error fetching appointments" });
+            return res.status(500).json({ message: "Error fetching appointments", error: err });
         }
         res.json(results);
     });
@@ -139,41 +139,83 @@ app.put("/api/admin/appointments/:id", (req, res) => {
 
     db.query(sql, [status, appointmentId], (err, result) => {
         if (err) {
-            return res.status(500).json({ message: "Error updating status" });
+            return res.status(500).json({ message: "Error updating status", error: err });
         }
         res.json({ message: "Appointment status updated" });
     });
 });
 
-// **Get Available and Booked Time Slots**
-// **Get Available and Booked Time Slots**
-app.get("/api/available-time-slots", (req, res) => {
-    const { date } = req.query;  // Retrieve the date query parameter
-    console.log("Date received:", date);  // Debugging log to check if the date is correctly passed
+// **Manage Time Slots**
+app.post("/api/slots", (req, res) => {
+    const { time } = req.body;
+    const sql = "INSERT INTO slots (time) VALUES (?)";
 
-    const sql = "SELECT timeSlot FROM appointments WHERE date = ?";
-
-    db.query(sql, [date], (err, results) => {
+    db.query(sql, [time], (err, result) => {
         if (err) {
-            console.error("Error fetching time slots:", err);
-            return res.status(500).json({ message: "Error fetching time slots" });
+            return res.status(500).json({ message: "Error adding slot", error: err });
         }
+        res.status(201).json({ message: "Slot added successfully" });
+    });
+});
 
-        const bookedSlots = results.map(row => row.timeSlot);
+app.get("/api/slots", (req, res) => {
+    const sql = "SELECT * FROM slots";
+    db.query(sql, (err, results) => {
+        if (err) {
+            return res.status(500).json({ message: "Error fetching slots" });
+        }
+        res.json(results);
+    });
+});
 
-        // Define all possible time slots
-        const allTimeSlots = [
-            "09:00:00", "10:00:00", "11:00:00", "12:00:00", "13:00:00", "14:00:00", "15:00:00", "16:00:00"
-        ];
 
-        // Find the available time slots by excluding the booked slots
-        const availableSlots = allTimeSlots.filter(slot => !bookedSlots.includes(slot));
+// Delete Slot
+app.delete('/api/slots/:id', (req, res) => {
+    const { id } = req.params;
 
-        // Send the available and booked time slots as the response
-        res.json({
-            availableSlots,
-            bookedSlots
-        });
+    const query = 'DELETE FROM slots WHERE id = ?';
+    db.query(query, [id], (err, result) => {
+        if (err) {
+            console.error('Error deleting slot:', err);
+            return res.status(500).json({ error: 'Error deleting slot' });
+        }
+        res.status(200).json({ message: 'Slot deleted successfully' });
+    });
+});
+// **Manage Time Slots**
+app.post("/api/slots", (req, res) => {
+    const { time } = req.body;
+    const sql = "INSERT INTO slots (time) VALUES (?)";
+
+    db.query(sql, [time], (err, result) => {
+        if (err) {
+            return res.status(500).json({ message: "Error adding slot", error: err });
+        }
+        res.status(201).json({ message: "Slot added successfully" });
+    });
+});
+
+app.get("/api/slots", (req, res) => {
+    const sql = "SELECT * FROM slots";
+    db.query(sql, (err, results) => {
+        if (err) {
+            return res.status(500).json({ message: "Error fetching slots" });
+        }
+        res.json(results);
+    });
+});
+
+// Delete Slot
+app.delete('/api/slots/:id', (req, res) => {
+    const { id } = req.params;
+
+    const query = 'DELETE FROM slots WHERE id = ?';
+    db.query(query, [id], (err, result) => {
+        if (err) {
+            console.error('Error deleting slot:', err);
+            return res.status(500).json({ error: 'Error deleting slot' });
+        }
+        res.status(200).json({ message: 'Slot deleted successfully' });
     });
 });
 
