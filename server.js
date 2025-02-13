@@ -8,25 +8,20 @@ const jwt = require("jsonwebtoken");
 
 const app = express();
 const PORT = process.env.PORT || 5005;
-const SECRET_KEY = process.env.SECRET_KEY || "92ea081ab0cbed55c7e441f82add8328d51a085fff1a5145c92d1891a7475a26"; // Move this to .env
+const SECRET_KEY = process.env.SECRET_KEY; // Ensure this is set in .env
 
 app.use(cors({ origin: "http://localhost:5006" })); // Adjust based on frontend URL
 app.use(express.json());
 
-// Establish MySQL connection
-const db = mysql.createConnection({
+// Establish MySQL connection using pooling
+const db = mysql.createPool({
     host: process.env.DB_HOST || "localhost",
     user: process.env.DB_USER || "root",
     password: process.env.DB_PASSWORD || "Dula2001",
     database: process.env.DB_NAME || "appointment_booking",
-});
-
-db.connect((err) => {
-    if (err) {
-        console.error("❌ Database connection failed:", err);
-    } else {
-        console.log("✅ Connected to MySQL");
-    }
+    waitForConnections: true,
+    connectionLimit: 10, // Adjust as needed
+    queueLimit: 0
 });
 
 // **User Registration**
@@ -91,23 +86,51 @@ app.post("/api/admin-login", (req, res) => {
         res.json({ token, admin: { id: admin.id, username: admin.username } });
     });
 });
+// **Check Slot Availability**
+app.get("/api/check-slot-availability/:slotId", (req, res) => {
+    const { slotId } = req.params;
+
+    const sql = "SELECT booked FROM slots WHERE id = ?";
+    db.query(sql, [slotId], (err, results) => {
+        if (err) {
+            return res.status(500).json({ message: "Error checking slot availability", error: err });
+        }
+
+        if (results.length === 0) {
+            return res.status(404).json({ message: "Slot not found" });
+        }
+
+        const isBooked = results[0].booked;
+        res.json({ slotId, available: !isBooked });
+    });
+});
 
 // **Create Appointment**
-app.post("/api/appointments", (req, res) => {
-    const { userId, name, mobileNumber, description, timeSlot, date } = req.body;
-    const sql = "INSERT INTO appointments (user_id, name, mobileNumber, description, timeSlot, date) VALUES (?, ?, ?, ?, ?, ?)";
+app.post("/api/book-appointments", (req, res) => {
+    const { userId, name, mobileNumber, description, slotId, date } = req.body;
+    if (!slotId) {
+        return res.status(400).send("slotId is required");
+    }
 
-    db.query(sql, [userId, name, mobileNumber, description, timeSlot, date], (err, result) => {
+    const sqlInsert = "INSERT INTO appointments (user_id, name, mobilenumber, description, slot_id, date) VALUES (?, ?, ?, ?, ?, ?)";
+    db.query(sqlInsert, [userId, name, mobileNumber, description, slotId, date], (err, result) => {
         if (err) {
-            res.status(500).json({ message: "Error booking appointment", error: err });
-        } else {
-            res.status(201).json({ message: "Appointment booked successfully!" });
+            return res.status(500).json({ message: "Error booking appointment", error: err });
         }
+
+        // Mark the slot as booked
+        const sqlUpdateSlot = "UPDATE slots SET booked = true WHERE id = ?";
+        db.query(sqlUpdateSlot, [slotId], (updateErr) => {
+            if (updateErr) {
+                return res.status(500).json({ message: "Error updating slot status", error: updateErr });
+            }
+            res.status(201).json({ message: "Appointment booked successfully!" });
+        });
     });
 });
 
 // **Get User's Appointments**
-app.get("/api/appointments/:userId", (req, res) => {
+app.get("/api/book-appointments/:userId", (req, res) => {
     const userId = req.params.userId;
     const sql = "SELECT * FROM appointments WHERE user_id = ?";
 
@@ -137,7 +160,7 @@ app.put("/api/admin/appointments/:id", (req, res) => {
     const appointmentId = req.params.id;
     const sql = "UPDATE appointments SET status = ? WHERE id = ?";
 
-    db.query(sql, [status, appointmentId], (err, result) => {
+    db.query(sql, [status, appointmentId], (err) => {
         if (err) {
             return res.status(500).json({ message: "Error updating status", error: err });
         }
@@ -150,7 +173,7 @@ app.post("/api/slots", (req, res) => {
     const { time } = req.body;
     const sql = "INSERT INTO slots (time) VALUES (?)";
 
-    db.query(sql, [time], (err, result) => {
+    db.query(sql, [time], (err) => {
         if (err) {
             return res.status(500).json({ message: "Error adding slot", error: err });
         }
@@ -168,57 +191,18 @@ app.get("/api/slots", (req, res) => {
     });
 });
 
-
-// Delete Slot
+// **Delete Slot**
 app.delete('/api/slots/:id', (req, res) => {
     const { id } = req.params;
 
     const query = 'DELETE FROM slots WHERE id = ?';
-    db.query(query, [id], (err, result) => {
+    db.query(query, [id], (err) => {
         if (err) {
-            console.error('Error deleting slot:', err);
-            return res.status(500).json({ error: 'Error deleting slot' });
+            return res.status(500).json({ message: "Error deleting slot", error: err });
         }
         res.status(200).json({ message: 'Slot deleted successfully' });
     });
 });
-// **Manage Time Slots**
-app.post("/api/slots", (req, res) => {
-    const { time } = req.body;
-    const sql = "INSERT INTO slots (time) VALUES (?)";
-
-    db.query(sql, [time], (err, result) => {
-        if (err) {
-            return res.status(500).json({ message: "Error adding slot", error: err });
-        }
-        res.status(201).json({ message: "Slot added successfully" });
-    });
-});
-
-app.get("/api/slots", (req, res) => {
-    const sql = "SELECT * FROM slots";
-    db.query(sql, (err, results) => {
-        if (err) {
-            return res.status(500).json({ message: "Error fetching slots" });
-        }
-        res.json(results);
-    });
-});
-
-// Delete Slot
-app.delete('/api/slots/:id', (req, res) => {
-    const { id } = req.params;
-
-    const query = 'DELETE FROM slots WHERE id = ?';
-    db.query(query, [id], (err, result) => {
-        if (err) {
-            console.error('Error deleting slot:', err);
-            return res.status(500).json({ error: 'Error deleting slot' });
-        }
-        res.status(200).json({ message: 'Slot deleted successfully' });
-    });
-});
-
 
 // **Server Listener**
 app.listen(PORT, () => console.log(`✅ Server running on port ${PORT}`));
