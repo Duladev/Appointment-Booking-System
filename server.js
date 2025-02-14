@@ -1,6 +1,5 @@
 require("dotenv").config(); // Load environment variables
-
-const mysql = require("mysql2");
+const mysql = require('mysql2/promise'); // Use the promise-compatible version
 const cors = require("cors");
 const express = require("express");
 const bcrypt = require("bcryptjs");
@@ -24,6 +23,15 @@ const db = mysql.createPool({
     queueLimit: 0
 });
 
+// Test the database connection
+db.getConnection()
+    .then(() => {
+        console.log('✅ Connected to MySQL');
+    })
+    .catch((err) => {
+        console.error('Error connecting to MySQL:', err.stack);
+    });
+
 // **User Registration**
 app.post("/api/register", async (req, res) => {
     try {
@@ -31,27 +39,22 @@ app.post("/api/register", async (req, res) => {
         const hashedPassword = await bcrypt.hash(password, 10);
 
         const sql = "INSERT INTO users (name, email, password) VALUES (?, ?, ?)";
-        db.query(sql, [name, email, hashedPassword], (err, result) => {
-            if (err) {
-                if (err.code === "ER_DUP_ENTRY") {
-                    return res.status(400).json({ message: "Email already exists" });
-                }
-                return res.status(500).json({ message: "Database error", error: err });
-            }
-            res.json({ message: "User registered successfully" });
-        });
+        const [result] = await db.query(sql, [name, email, hashedPassword]);
+        res.json({ message: "User registered successfully" });
     } catch (error) {
         res.status(500).json({ message: "Internal server error", error });
     }
 });
 
 // **User Login**
-app.post("/api/login", (req, res) => {
+app.post("/api/login", async (req, res) => {
     const { email, password } = req.body;
     const sql = "SELECT * FROM users WHERE email = ?";
 
-    db.query(sql, [email], async (err, results) => {
-        if (err || results.length === 0) {
+    try {
+        const [results] = await db.query(sql, [email]);
+
+        if (results.length === 0) {
             return res.status(400).json({ message: "User not found" });
         }
 
@@ -63,16 +66,20 @@ app.post("/api/login", (req, res) => {
 
         const token = jwt.sign({ userId: user.id }, SECRET_KEY, { expiresIn: "1h" });
         res.json({ token, user: { id: user.id, name: user.name, email: user.email } });
-    });
+    } catch (error) {
+        res.status(500).json({ message: "Internal server error", error });
+    }
 });
 
 // **Admin Login**
-app.post("/api/admin-login", (req, res) => {
+app.post("/api/admin-login", async (req, res) => {
     const { username, password } = req.body;
     const sql = "SELECT * FROM admins WHERE username = ?";
 
-    db.query(sql, [username], async (err, results) => {
-        if (err || results.length === 0) {
+    try {
+        const [results] = await db.query(sql, [username]);
+
+        if (results.length === 0) {
             return res.status(400).json({ message: "Admin not found" });
         }
 
@@ -84,125 +91,129 @@ app.post("/api/admin-login", (req, res) => {
 
         const token = jwt.sign({ adminId: admin.id }, SECRET_KEY, { expiresIn: "1h" });
         res.json({ token, admin: { id: admin.id, username: admin.username } });
-    });
-});
-// **Check Slot Availability**
-app.get("/api/check-slot-availability/:slotId", (req, res) => {
-    const { slotId } = req.params;
-
-    const sql = "SELECT booked FROM slots WHERE id = ?";
-    db.query(sql, [slotId], (err, results) => {
-        if (err) {
-            return res.status(500).json({ message: "Error checking slot availability", error: err });
-        }
-
-        if (results.length === 0) {
-            return res.status(404).json({ message: "Slot not found" });
-        }
-
-        const isBooked = results[0].booked;
-        res.json({ slotId, available: !isBooked });
-    });
+    } catch (error) {
+        res.status(500).json({ message: "Internal server error", error });
+    }
 });
 
 // **Create Appointment**
-app.post("/api/book-appointments", (req, res) => {
+app.post("/api/book-appointments", async (req, res) => {
     const { userId, name, mobileNumber, description, slotId, date } = req.body;
     if (!slotId) {
         return res.status(400).send("slotId is required");
     }
 
-    const sqlInsert = "INSERT INTO appointments (user_id, name, mobilenumber, description, slot_id, date) VALUES (?, ?, ?, ?, ?, ?)";
-    db.query(sqlInsert, [userId, name, mobileNumber, description, slotId, date], (err, result) => {
-        if (err) {
-            return res.status(500).json({ message: "Error booking appointment", error: err });
-        }
+    try {
+        const sqlInsert = "INSERT INTO appointments (user_id, name, mobilenumber, description, slot_id, date) VALUES (?, ?, ?, ?, ?, ?)";
+        const [result] = await db.query(sqlInsert, [userId, name, mobileNumber, description, slotId, date]);
 
         // Mark the slot as booked
         const sqlUpdateSlot = "UPDATE slots SET booked = true WHERE id = ?";
-        db.query(sqlUpdateSlot, [slotId], (updateErr) => {
-            if (updateErr) {
-                return res.status(500).json({ message: "Error updating slot status", error: updateErr });
-            }
-            res.status(201).json({ message: "Appointment booked successfully!" });
-        });
-    });
+        await db.query(sqlUpdateSlot, [slotId]);
+
+        res.status(201).json({ message: "Appointment booked successfully!" });
+    } catch (error) {
+        res.status(500).json({ message: "Error booking appointment", error });
+    }
 });
 
 // **Get User's Appointments**
-app.get("/api/book-appointments/:userId", (req, res) => {
+app.get("/api/book-appointments/:userId", async (req, res) => {
     const userId = req.params.userId;
     const sql = "SELECT * FROM appointments WHERE user_id = ?";
 
-    db.query(sql, [userId], (err, results) => {
-        if (err) {
-            return res.status(500).json({ message: "Error fetching appointments", error: err });
-        }
+    try {
+        const [results] = await db.query(sql, [userId]);
         res.json(results);
-    });
-});
-
-// **Get All Appointments (Admin)**
-app.get("/api/admin/appointments", (req, res) => {
-    const sql = "SELECT appointments.*, users.name, users.email FROM appointments JOIN users ON appointments.user_id = users.id";
-
-    db.query(sql, (err, results) => {
-        if (err) {
-            return res.status(500).json({ message: "Error fetching appointments", error: err });
-        }
-        res.json(results);
-    });
-});
-
-// **Update Appointment Status (Admin)**
-app.put("/api/admin/appointments/:id", (req, res) => {
-    const { status } = req.body;
-    const appointmentId = req.params.id;
-    const sql = "UPDATE appointments SET status = ? WHERE id = ?";
-
-    db.query(sql, [status, appointmentId], (err) => {
-        if (err) {
-            return res.status(500).json({ message: "Error updating status", error: err });
-        }
-        res.json({ message: "Appointment status updated" });
-    });
+    } catch (err) {
+        res.status(500).json({ message: "Error fetching appointments", error: err });
+    }
 });
 
 // **Manage Time Slots**
-app.post("/api/slots", (req, res) => {
+app.post("/api/slots", async (req, res) => {
     const { time } = req.body;
     const sql = "INSERT INTO slots (time) VALUES (?)";
 
-    db.query(sql, [time], (err) => {
-        if (err) {
-            return res.status(500).json({ message: "Error adding slot", error: err });
-        }
+    try {
+        await db.query(sql, [time]);
         res.status(201).json({ message: "Slot added successfully" });
-    });
+    } catch (err) {
+        res.status(500).json({ message: "Error adding slot", error: err });
+    }
 });
 
-app.get("/api/slots", (req, res) => {
+app.get("/api/slots", async (req, res) => {
     const sql = "SELECT * FROM slots";
-    db.query(sql, (err, results) => {
-        if (err) {
-            return res.status(500).json({ message: "Error fetching slots" });
-        }
+    try {
+        const [results] = await db.query(sql);
         res.json(results);
-    });
+    } catch (err) {
+        res.status(500).json({ message: "Error fetching slots", error: err });
+    }
 });
 
 // **Delete Slot**
-app.delete('/api/slots/:id', (req, res) => {
+app.delete('/api/slots/:id', async (req, res) => {
     const { id } = req.params;
-
     const query = 'DELETE FROM slots WHERE id = ?';
-    db.query(query, [id], (err) => {
-        if (err) {
-            return res.status(500).json({ message: "Error deleting slot", error: err });
-        }
+    try {
+        await db.query(query, [id]);
         res.status(200).json({ message: 'Slot deleted successfully' });
-    });
+    } catch (err) {
+        res.status(500).json({ message: "Error deleting slot", error: err });
+    }
 });
 
-// **Server Listener**
-app.listen(PORT, () => console.log(`✅ Server running on port ${PORT}`));
+// **Delete Appointment**
+app.delete('/appointments/:id', async (req, res) => {
+    const { id } = req.params;
+    try {
+        const [result] = await db.query('DELETE FROM appointments WHERE id = ?', [id]);
+        if (result.affectedRows === 0) {
+            return res.status(404).json({ message: "Appointment not found" });
+        }
+        res.json({ message: "Appointment deleted successfully" });
+    } catch (error) {
+        console.error("Error deleting appointment:", error);
+        res.status(500).json({ message: "Error deleting appointment", error });
+    }
+});
+
+// **Fetch All Appointments**
+app.get('/appointments', async (req, res) => {
+    try {
+        const [appointments] = await db.query("SELECT * FROM appointments");
+        res.json(appointments);
+    } catch (error) {
+        console.error("Error fetching appointments:", error.stack);
+        res.status(500).json({ message: "Failed to fetch appointments", error: error.message });
+    }
+});
+
+// **Update Appointment Status**
+app.put('/appointments/:id', async (req, res) => {
+    const { id } = req.params;
+    const { date, status, description } = req.body;
+
+    try {
+        const [result] = await db.query(
+            'UPDATE appointments SET date = ?, status = ?, description = ? WHERE id = ?',
+            [date, status, description, id]
+        );
+
+        if (result.affectedRows === 0) {
+            return res.status(404).json({ message: "Appointment not found" });
+        }
+
+        res.json({ message: "Appointment updated successfully" });
+    } catch (error) {
+        console.error("Error updating appointment:", error);
+        res.status(500).json({ message: "Error updating appointment", error });
+    }
+});
+
+// Start the server
+app.listen(PORT, () => {
+    console.log(`Server running on port ${PORT}`);
+});
