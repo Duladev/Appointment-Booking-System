@@ -58,29 +58,29 @@ const ManageAppointments = () => {
     };
 
     return (
-        <div className="min-h-screen bg-gray-100 p-6">
-            <h1 className="text-2xl font-semibold text-gray-700 mb-6 text-center">Manage Appointments</h1>
+        <div className="min-h-screen bg-gradient-to-r from-blue-50 via-indigo-50 to-indigo-100 p-8">
+            <h1 className="text-4xl font-extrabold text-gray-800 mb-8 text-center">Manage Appointments</h1>
 
             {loading ? (
-                <p className="text-center text-gray-500">Loading appointments...</p>
+                <p className="text-center text-gray-500 animate-pulse">Loading appointments...</p>
             ) : error ? (
-                <p className="text-center text-red-500">{error}</p>
+                <p className="text-center text-red-600 font-semibold">{error}</p>
             ) : (
-                <ul className="space-y-4">
+                <ul className="space-y-6">
                     {appointments.length > 0 ? (
                         appointments.map((appointment) => (
-                            <li key={appointment.id} className="bg-white p-4 rounded-md shadow-md">
-                                <h3 className="text-lg font-semibold text-gray-800">{appointment.name}</h3>
-                                <p className="text-sm text-gray-500">Mobile: {appointment.mobilenumber}</p>
-                                <p className="text-sm text-gray-500">Slot ID: {appointment.slot_id}</p>
-                                <p className="text-sm text-gray-500">Date: {new Date(appointment.date).toDateString()}</p>
-                                <p className="text-sm text-gray-500">Status: {appointment.status}</p>
-                                <p className="text-sm text-gray-500">Description: {appointment.description}</p>
+                            <li key={appointment.id} className="bg-white p-6 rounded-lg shadow-lg hover:shadow-2xl transition-all duration-500 hover:scale-105 transform">
+                                <h3 className="text-2xl font-semibold text-gray-900">{appointment.name}</h3>
+                                <p className="text-sm text-gray-600">Mobile: {appointment.mobilenumber}</p>
+                                <p className="text-sm text-gray-600">Slot ID: {appointment.slot_id}</p>
+                                <p className="text-sm text-gray-600">Date: {new Date(appointment.date).toDateString()}</p>
+                                <p className="text-sm text-gray-600">Status: {appointment.status}</p>
+                                <p className="text-sm text-gray-600">Description: {appointment.description}</p>
 
-                                <div className="mt-3 flex gap-3">
+                                <div className="mt-4 flex gap-4">
                                     <button
                                         onClick={() => handleDelete(appointment.id)}
-                                        className="bg-red-500 text-white px-4 py-2 rounded-md hover:bg-red-600"
+                                        className="bg-red-600 text-white px-6 py-3 rounded-lg shadow-md hover:bg-red-700 transition-all duration-200"
                                     >
                                         Delete
                                     </button>
@@ -92,7 +92,7 @@ const ManageAppointments = () => {
                                                 status: appointment.status
                                             });
                                         }}
-                                        className="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600"
+                                        className="bg-blue-600 text-white px-6 py-3 rounded-lg shadow-md hover:bg-blue-700 transition-all duration-200"
                                     >
                                         Edit
                                     </button>
@@ -100,28 +100,28 @@ const ManageAppointments = () => {
                             </li>
                         ))
                     ) : (
-                        <p className="text-center text-gray-500">No appointments found.</p>
+                        <p className="text-center text-gray-500 font-semibold">No appointments found.</p>
                     )}
                 </ul>
             )}
 
             {/* Edit Appointment Form */}
             {editingAppointment && (
-                <div className="fixed inset-0 flex items-center justify-center bg-gray-900 bg-opacity-50">
-                    <div className="bg-white p-6 rounded-lg shadow-lg w-96">
-                        <h2 className="text-xl font-semibold mb-4">Edit Appointment</h2>
-                        <label className="block text-gray-600">Date:</label>
+                <div className="fixed inset-0 flex items-center justify-center bg-gray-800 bg-opacity-60">
+                    <div className="bg-white p-8 rounded-lg shadow-xl w-96">
+                        <h2 className="text-2xl font-semibold mb-6">Edit Appointment</h2>
+                        <label className="block text-gray-700 mb-2">Date:</label>
                         <input
                             type="date"
                             value={updatedData.date}
                             onChange={(e) => setUpdatedData({ ...updatedData, date: e.target.value })}
-                            className="w-full border rounded-md p-2 mb-2"
+                            className="w-full border-2 border-gray-300 rounded-md p-3 mb-4 focus:outline-none focus:ring-2 focus:ring-blue-500"
                         />
-                        <label className="block text-gray-600">Status:</label>
+                        <label className="block text-gray-700 mb-2">Status:</label>
                         <select
                             value={updatedData.status}
                             onChange={(e) => setUpdatedData({ ...updatedData, status: e.target.value })}
-                            className="w-full border rounded-md p-2 mb-4"
+                            className="w-full border-2 border-gray-300 rounded-md p-3 mb-6 focus:outline-none focus:ring-2 focus:ring-blue-500"
                         >
                             <option value="Pending">Pending</option>
                             <option value="Confirmed">Confirmed</option>
@@ -129,16 +129,16 @@ const ManageAppointments = () => {
                             <option value="Cancelled">Cancelled</option>
                         </select>
 
-                        <div className="flex justify-end gap-3">
+                        <div className="flex justify-end gap-4">
                             <button
                                 onClick={() => setEditingAppointment(null)}
-                                className="bg-gray-500 text-white px-4 py-2 rounded-md hover:bg-gray-600"
+                                className="bg-gray-500 text-white px-6 py-3 rounded-md hover:bg-gray-600 focus:outline-none transition-all"
                             >
                                 Cancel
                             </button>
                             <button
                                 onClick={handleUpdate}
-                                className="bg-green-500 text-white px-4 py-2 rounded-md hover:bg-green-600"
+                                className="bg-green-600 text-white px-6 py-3 rounded-md hover:bg-green-700 focus:outline-none transition-all"
                             >
                                 Save Changes
                             </button>
@@ -147,10 +147,10 @@ const ManageAppointments = () => {
                 </div>
             )}
 
-            <div className="mt-6 flex justify-center">
+            <div className="mt-8 flex justify-center">
                 <button
                     onClick={() => navigate("/")}
-                    className="bg-gray-500 text-white px-6 py-3 rounded-md hover:bg-gray-600"
+                    className="bg-gray-600 text-white px-8 py-4 rounded-md shadow-lg hover:bg-gray-700 transition-all duration-200"
                 >
                     Back to Dashboard
                 </button>
