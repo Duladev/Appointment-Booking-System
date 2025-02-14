@@ -1,19 +1,17 @@
-Appointment Booking System
-Description:
-A complete Appointment-Booking-System built with Node.js and SQL allowing users to book appointments and administrators to manage them efficiently.
+📅 Appointment Booking System
+A complete and efficient appointment booking system built with Node.js and SQL, enabling users to book appointments and administrators to manage them seamlessly.
 
 🚀 Features
 🔹 User Features
 ✅ Secure User Registration & Login
-✅ Browse available appointment slots
-✅ Book, reschedule, or cancel appointments
-✅ View booking history
+✅ Browse available Appointment Slots
+✅ Book, Reschedule, or Cancel appointments
+✅ View Booking History
 
 🔹 Admin Features
 ✅ Manage Appointments (Add, Update, Delete)
-✅ View and approve/reject bookings
-✅ Dashboard for monitoring appointments
-
+✅ Approve / Reject Bookings
+✅ Dashboard to Monitor Appointments
 🛠️ Technologies Used
 Frontend: React.js
 Backend: Node.js, Express.js
