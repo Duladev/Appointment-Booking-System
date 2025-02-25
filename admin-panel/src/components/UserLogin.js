@@ -5,15 +5,32 @@ const UserLogin = () => {
     const [credentials, setCredentials] = useState({ email: "", password: "" });
     const navigate = useNavigate();
 
-    const handleLogin = (e) => {
+    const handleLogin = async (e) => {
         e.preventDefault();
-        // Dummy validation (Replace with backend authentication)
-        if (credentials.email && credentials.password) {
-            navigate("/user/dashboard"); // Redirect to user dashboard
-        } else {
-            alert("Invalid user credentials!");
+        try {
+            const response = await fetch("http://localhost:5005/api/login", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify(credentials),
+            });
+
+            const data = await response.json();
+
+            if (response.ok) {
+                // Save JWT to localStorage
+                localStorage.setItem("token", data.token);
+                navigate("/user/dashboard"); // Redirect to dashboard
+            } else {
+                alert(data.message || "Login failed");
+            }
+        } catch (error) {
+            console.error("Error during login:", error);
+            alert("An error occurred. Please try again.");
         }
     };
+
 
     return (
         <div className="flex items-center justify-center min-h-screen bg-gradient-to-r from-green-400 via-blue-500 to-purple-600">

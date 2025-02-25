@@ -5,16 +5,35 @@ const UserRegister = () => {
     const [user, setUser] = useState({ name: "", email: "", password: "" });
     const navigate = useNavigate();
 
-    const handleRegister = (e) => {
+    const handleRegister = async (e) => {
         e.preventDefault();
-        // Dummy user registration logic (Replace with backend API call)
         if (user.name && user.email && user.password) {
-            alert("Registration Successful! Please log in.");
-            navigate("/user/login"); // Redirect to login page after registration
+            // Send data to the backend API
+            try {
+                const response = await fetch("http://localhost:5005/api/register", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify(user),
+                });
+
+                const result = await response.json();
+                if (response.ok) {
+                    alert("Registration Successful! Please log in.");
+                    navigate("/user/login"); // Redirect to login page after registration
+                } else {
+                    alert(result.message || "Registration failed. Please try again.");
+                }
+            } catch (error) {
+                alert("An error occurred. Please try again.");
+                console.error(error);
+            }
         } else {
             alert("Please fill all fields.");
         }
     };
+
 
     return (
         <div className="flex items-center justify-center min-h-screen bg-gradient-to-r from-blue-400 via-green-500 to-purple-600">

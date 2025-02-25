@@ -40,35 +40,48 @@ app.post("/api/register", async (req, res) => {
 
         const sql = "INSERT INTO users (name, email, password) VALUES (?, ?, ?)";
         const [result] = await db.query(sql, [name, email, hashedPassword]);
+
         res.json({ message: "User registered successfully" });
     } catch (error) {
+        console.error(error); // Log the error for debugging
         res.status(500).json({ message: "Internal server error", error });
     }
 });
 
+
 // **User Login**
 app.post("/api/login", async (req, res) => {
     const { email, password } = req.body;
-    const sql = "SELECT * FROM users WHERE email = ?";
 
-    try {
-        const [results] = await db.query(sql, [email]);
+    // Query to find user by email
+    const sql = "SELECT * FROM users WHERE email = ?";
+    db.query(sql, [email], async (err, results) => {
+        if (err) {
+            return res.status(500).json({ message: "Database error" });
+        }
 
         if (results.length === 0) {
             return res.status(400).json({ message: "User not found" });
         }
 
         const user = results[0];
+
+        // Compare provided password with the stored hashed password
         const isMatch = await bcrypt.compare(password, user.password);
+
         if (!isMatch) {
             return res.status(400).json({ message: "Invalid credentials" });
         }
 
-        const token = jwt.sign({ userId: user.id }, SECRET_KEY, { expiresIn: "1h" });
-        res.json({ token, user: { id: user.id, name: user.name, email: user.email } });
-    } catch (error) {
-        res.status(500).json({ message: "Internal server error", error });
-    }
+        // Create JWT token
+        const token = jwt.sign(
+            { userId: user.id, email: user.email },
+            process.env.SECRET_KEY,
+            { expiresIn: "1h" } // Token expires in 1 hour
+        );
+
+        return res.status(200).json({ token, user: { id: user.id, name: user.name, email: user.email } });
+    });
 });
 
 // **Admin Login**
