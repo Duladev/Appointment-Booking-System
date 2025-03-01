@@ -24,7 +24,7 @@ Install Node.js & npm
 Install MySQL Server / SQL Server
 Configure Database Credentials
 📌 Clone the Repository
-git clone https://github.com/your-username/appointment-booking-system.git
+git clone https://github.com/Duladev/appointment-booking-system.git
 cd appointment-booking-system
 📌 Install Dependencies
 For Backend:
