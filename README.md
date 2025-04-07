@@ -2,52 +2,92 @@
 A complete and efficient appointment booking system built with Node.js and SQL, enabling users to book appointments and administrators to manage them seamlessly.
 
 🚀 Features
+
 🔹 User Features
+
 ✅ Secure User Registration & Login
+
 ✅ Browse available Appointment Slots
+
 ✅ Book, Reschedule, or Cancel appointments
+
 ✅ View Booking History
 
 🔹 Admin Features
+
 ✅ Manage Appointments (Add, Update, Delete)
+
 ✅ Approve / Reject Bookings
+
 ✅ Dashboard to Monitor Appointments
+
 🛠️ Technologies Used
+
 Frontend: React.js
+
 Backend: Node.js, Express.js
+
 Database: MySQL / SQL Server
+
 Authentication: JWT (JSON Web Tokens)
+
 Styling: TaliwindCSS
+
 🎯 Installation & Setup
+
 📌 Prerequisites
+
 Install Node.js & npm
+
 Install MySQL Server / SQL Server
+
 Configure Database Credentials
+
 📌 Clone the Repository
+
 git clone https://github.com/Duladev/appointment-booking-system.git
+
 cd appointment-booking-system
+
 📌 Install Dependencies
+
 For Backend:
+
 npm install
 
 For Frontend:
+
 npm install
+
 📌 Configure Database
+
 Create a database in MySQL / SQL Server
+
 Run the SQL script in /server/database/schema.sql
+
 Update your .env file in the server directory:
 
 PORT=5006
+
 DB_HOST=localhost
+
 DB_USER=root
+
 DB_PASSWORD=your_password
+
 DB_NAME=appointment_db
+
 JWT_SECRET=your_jwt_secret
+
 📌 Start the Application
+
 Backend Server:
+
 node server.js
 
+
 Frontend:
+
 npm start
 
 📷 Screenshots
